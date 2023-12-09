@@ -9,8 +9,7 @@ class AST;
 class Expr;
 class Program;
 class Declaration;
-class Statement;
-class Factor;
+class Final;
 class BinaryOp;
 class Assignment;
 class Comparison;
@@ -24,7 +23,7 @@ public:
   virtual void visit(AST &) {}               // Visit the base AST node
   virtual void visit(Expr &) {}              // Visit the expression node
   virtual void visit(Program &) = 0;         // Visit the group of expressions node
-  virtual void visit(Factor &) = 0;          // Visit the factor node
+  virtual void visit(Final &) = 0;           // Visit the Final node
   virtual void visit(BinaryOp &) = 0;        // Visit the binary operation node
   virtual void visit(Assignment &) = 0;      // Visit the assignment expression node
   virtual void visit(Declaration &) = 0;     // Visit the variable declaration node
@@ -96,35 +95,9 @@ public:
   }
 };
 
-// Statement class represents a Statement in the AST(loopc, if, elif, else, assignment)
-class Statement : public Expr
-{
-  using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
-  using ValueVector = llvm::SmallVector<Expr *, 8>;
-  VarVector Vars;                           // Stores the list of variables
-  ValueVector Values;                       // Stores the list of initializers
 
-public:
-  // Declaration(llvm::SmallVector<llvm::StringRef, 8> Vars, Expr *E) : Vars(Vars), E(E) {}
-  Statement(llvm::SmallVector<llvm::StringRef, 8> Vars, llvm::SmallVector<Expr *, 8> Values) :
-  Vars(Vars), Values(Values) {}
-
-  VarVector::const_iterator begin() { return Vars.begin(); }
-
-  VarVector::const_iterator end() { return Vars.end(); }
-
-  // ValueVector::const_iterator begin() { return Values.begin(); }
-
-  // ValueVector::const_iterator end() { return Values.end(); }
-
-  virtual void accept(ASTVisitor &V) override
-  {
-    V.visit(*this);
-  }
-};
-
-// Factor class represents a factor in the AST (either an identifier or a number)
-class Factor : public Expr
+// Final class represents a Final in the AST (either an identifier or a number)
+class Final : public Expr
 {
 public:
   enum ValueKind
@@ -134,11 +107,11 @@ public:
   };
 
 private:
-  ValueKind Kind;                            // Stores the kind of factor (identifier or number)
-  llvm::StringRef Val;                       // Stores the value of the factor
+  ValueKind Kind;                            // Stores the kind of Final (identifier or number)
+  llvm::StringRef Val;                       // Stores the value of the Final
 
 public:
-  Factor(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
+  Final(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
 
   ValueKind getKind() { return Kind; }
 
@@ -160,7 +133,8 @@ public:
     Minus,
     Mul,
     Div,
-    Mod
+    Mod,
+    Exp
   };
 
 private:
@@ -198,14 +172,14 @@ class Assignment : public Expr
     Exp_assign      // ^=
 };
 private:
-  Factor *Left;                             // Left-hand side factor (identifier)
+  Final *Left;                             // Left-hand side Final (identifier)
   Expr *Right;                              // Right-hand side expression
   AssignKind AK;                            // Kind of assignment
 
 public:
-  Assignment(Factor *L, Expr *R, AssignKind AK) : Left(L), Right(R), AK(AK) {}
+  Assignment(Final *L, Expr *R, AssignKind AK) : Left(L), Right(R), AK(AK) {}
 
-  Factor *getLeft() { return Left; }
+  Final *getLeft() { return Left; }
 
   Expr *getRight() { return Right; }
 
@@ -232,7 +206,7 @@ class Comparison : public Expr
   };
     
 private:
-  Expr *Left;                                // Left-hand side factor (identifier)
+  Expr *Left;                                // Left-hand side expression
   Expr *Right;                               // Right-hand side expression
   Operator Op;                                  // Kind of assignment
 

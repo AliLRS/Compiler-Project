@@ -38,6 +38,7 @@ public:
         star,           // *
         slash,          // /
         mod,            // %
+        exp,            // ^
         l_paren,        // (
         r_paren,        // )
         KW_int,         // int

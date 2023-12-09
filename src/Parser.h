@@ -45,6 +45,7 @@ class Parser
     Expr *parseAssign();
     Expr *parseExpr();
     Expr *parseTerm();
+    Expr *parseFinal();
     Expr *parseFactor();
     Expr *parseComparison();
 

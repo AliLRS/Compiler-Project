@@ -106,10 +106,10 @@ _error: // TODO: Check this later in case of error :)
 Expr *Parser::parseAssign()
 {
     Expr *E;
-    Factor *F;
+    Final *F;
     Assignment::AssignKind AK;
 
-    F = (Factor *)(parseFactor());
+    F = (Final *)(parseFinal());
 
     if (Tok.is(Token::equal))
     {
@@ -178,8 +178,6 @@ Expr *Parser::parseTerm()
     Expr *Left = parseFactor();
     while (Tok.isOneOf(Token::star, Token::slash))
     {
-        // BinaryOp::Operator Op =
-        //     Tok.is(Token::star) ? BinaryOp::Mul : BinaryOp::Div;
         BinaryOp::Operator Op;
         if (Tok.is(Token::star))
             Op = BinaryOp::Mul;
@@ -200,15 +198,34 @@ Expr *Parser::parseTerm()
 
 Expr *Parser::parseFactor()
 {
+    Expr *Left = parseFinal();
+    while (Tok.is(Token::mod))
+    {
+        BinaryOp::Operator Op;
+        if (Tok.is(Token::exp))
+            Op = BinaryOp::Exp;
+        else {
+            error();
+            return nullptr;
+        }
+        advance();
+        Expr *Right = parseFactor();
+        Left = new BinaryOp(Op, Left, Right);
+    }
+    return Left;
+}
+
+Expr *Parser::parseFinal()
+{
     Expr *Res = nullptr;
     switch (Tok.getKind())
     {
     case Token::number:
-        Res = new Factor(Factor::Number, Tok.getText());
+        Res = new Final(Final::Number, Tok.getText());
         advance();
         break;
     case Token::ident:
-        Res = new Factor(Factor::Ident, Tok.getText());
+        Res = new Final(Final::Ident, Tok.getText());
         advance();
         break;
     case Token::l_paren:
