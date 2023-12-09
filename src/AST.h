@@ -225,4 +225,107 @@ public:
   }
 };
 
+// LogicalExpr class represents a logical expression in the AST
+class LogicalExpr : public Expr
+{
+  public:
+  enum Operator
+  {
+    And,          // &&
+    Or,           // ||
+  };
+
+private:
+  Expr *Left;                                // Left-hand side expression
+  Expr *Right;                               // Right-hand side expression
+  Operator Op;                                  // Kind of assignment
+
+public:
+  LogicalExpr(Expr *L, Expr *R, Operator Op) : Left(L), Right(R), Op(Op) {}
+
+  Expr *getLeft() { return Left; }
+
+  Expr *getRight() { return Right; }
+
+  Operator getOperator() { return Op; }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+class elifStmt : public Expr
+{
+using assignmentsVector = llvm::SmallVector<Expr *, 8>;
+assignmentsVector assignments;
+
+private:
+  Expr *Cond;
+
+public:
+  elifStmt(Expr *Cond, llvm::SmallVector<Expr *, 8> assignments) : Cond(Cond), assignments(assignments) {}
+
+  Expr *getCond() { return Cond; }
+
+  assignmentsVector::const_iterator begin() { return assignments.begin(); }
+
+class IfStmt : public Expr
+{
+using assignmentsVector = llvm::SmallVector<Expr *, 8>;
+using elifVector = llvm::SmallVector<elifStmt *, 8>;
+assignmentsVector ifAssignments;
+assignmentsVector elseAssignments;
+elifVector elifStmts;
+
+
+private:
+  Expr *Cond;
+
+public:
+  IfStmt(Expr *Cond, llvm::SmallVector<Expr *, 8> ifAssignments, llvm::SmallVector<Expr *, 8> elseAssignments, llvm::SmallVector<elifStmt *, 8> elifStmts) : Cond(Cond), ifAssignments(ifAssignments), elseAssignments(elseAssignments), elifStmts(elifStmts) {}
+
+  Expr *getCond() { return Cond; }
+
+  assignmentsVector::const_iterator begin() { return ifAssignments.begin(); }
+
+  assignmentsVector::const_iterator end() { return ifAssignments.end(); }
+
+  assignmentsVector::const_iterator beginElse() { return elseAssignments.begin(); }
+
+  assignmentsVector::const_iterator endElse() { return elseAssignments.end(); }
+
+  elifVector::const_iterator beginElif() { return elifStmts.begin(); }
+
+  elifVector::const_iterator endElif() { return elifStmts.end(); }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
+class IterStmt : public Expr
+{
+using assignmentsVector = llvm::SmallVector<Expr *, 8>;
+assignmentsVector assignments;
+
+private:
+  Expr *Cond;
+
+public:
+  IterStmt(Expr *Cond, llvm::SmallVector<Expr *, 8> assignments) : Cond(Cond), assignments(assignments) {}
+
+  Expr *getCond() { return Cond; }
+
+  assignmentsVector::const_iterator begin() { return assignments.begin(); }
+
+  assignmentsVector::const_iterator end() { return assignments.end(); }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
+
 #endif

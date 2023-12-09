@@ -48,6 +48,9 @@ class Parser
     Expr *parseFinal();
     Expr *parseFactor();
     Expr *parseComparison();
+    Expr *parseLogicalExpr();
+    Expr *parseIf();
+    Expr *parseIter();
 
 public:
     // initializes all members and retrieves the first token

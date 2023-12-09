@@ -261,6 +261,12 @@ Expr *Parser::parseComparison()
             Op = Comparison::Greater_equal;
         else if (Tok.is(Token::lte))
             Op = Comparison::Less_equal;
+        else if (Tok.is(Token::l_paren)) {
+            advance();
+            Expr *Right = parseExpr();
+            if (!consume(Token::r_paren))
+                break;
+        }
        else {
             error();
             return nullptr;
@@ -271,3 +277,210 @@ Expr *Parser::parseComparison()
     }
     return Left;
 }
+
+Expr *Parser::parseLogicalExpr()
+{
+    Expr *Left = parseComparison();
+    while (Tok.isOneOf(Token::star, Token::slash))
+    {
+        LogicalExpr::Operator Op;
+        if (Tok.is(Token::and))
+            Op = LogicalExpr::And;
+        else if (Tok.is(Token::or))
+            Op = LogicalExpr::Or;
+        else if (Tok.is(Token::l_paren)) {
+            advance();
+            Expr *Right = parseExpr();
+            if (!consume(Token::r_paren))
+                break;
+        }
+       else {
+            error();
+            return nullptr;
+        }
+        advance();
+        Expr *Right = parseExpr();
+        Left = new BinaryOp(Op, Left, Right);
+    }
+    return Left;
+}
+
+Expr *Parser::parseIf()
+{
+    llvm::SmallVector<Expr *, 8> ifAssignments;
+    llvm::SmallVector<Expr *, 8> elseAssignments;
+    llvm::SmallVector<elifStmt *, 8> elifStmts;
+
+    if (expect(Token::KW_if))
+        goto _error;
+
+    advance();
+
+    if (expect(Token::l_paren))
+        goto _error;
+
+    advance();
+
+    Expr *Cond = parseLogicalExpr();
+
+    if (expect(Token::r_paren))
+        goto _error;
+
+    advance();
+
+    if (expect(Token::KW_begin))
+        goto _error;
+
+    advance();
+
+    ifAsgnmnt = parseAssign();
+    ifAssignments.push_back(ifAsgnmnt);
+
+    if (expect(Token::semicolon))
+    {
+        error();
+        goto _error;
+    }
+    
+    advance();
+
+    while (!Tok.is(Token::KW_end))
+    {
+        ifAsgnmnt = parseAssign();
+        ifAssignments.push_back(ifAsgnmnt);
+
+        if (expect(Token::semicolon))
+        {
+            error();
+            goto _error;
+        }
+    }
+
+    if (expect(Token::KW_end))
+        goto _error;
+
+    advance();
+
+    while (Tok.is(Token::KW_elif)) {
+        advance();
+
+        if (expect(Token::l_paren))
+            goto _error;
+
+        advance();
+
+        Expr *Cond = parseLogicalExpr();
+
+        if (expect(Token::r_paren))
+            goto _error;
+
+        advance();
+
+        if (expect(Token::KW_begin))
+            goto _error;
+
+        advance();
+
+        elifStmt *elif = new elifStmt(Cond, parseAssign());
+
+        if (expect(Token::semicolon))
+        {
+            error();
+            goto _error;
+        }
+        
+        elifStmts.push_back(elif);
+        advance();
+
+        while (!Tok.is(Token::KW_end))
+        {
+            elifStmt->push_back(parseAssign());
+
+            if (expect(Token::semicolon))
+            {
+                error();
+                goto _error;
+            }
+        }
+
+        if (expect(Token::KW_end))
+            goto _error;
+
+        advance();
+    }
+
+    if (Tok.is(Token::KW_else))
+    {
+        advance();
+
+        if (expect(Token::l_brace))
+            goto _error;
+
+        advance();
+
+        Else = parseProgram();
+
+        if (expect(Token::r_brace))
+            goto _error;
+
+        advance();
+    }
+    else
+    {
+        Else = nullptr;
+    }
+
+    return new If(E, Then, Else);
+
+_error: // TODO: Check this later in case of error :)
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
+
+Expr *Parser::parseIter()
+{
+    llvm::SmallVector<Expr *, 8> assignments;
+
+    if (expect(Token::KW_loopc))
+        goto _error;
+
+    advance();
+
+    if (expect(Token::l_paren))
+        goto _error;
+
+    advance();
+
+    Expr *Cond = parseLogicalExpr();
+
+    if (expect(Token::r_paren))
+        goto _error;
+
+    advance();
+
+    if (expect(Token::KW_begin))
+        goto _error;
+
+    advance();
+
+    while (!Tok.is(Token::KW_end))
+    {
+        asgnmnt = parseAssign();
+        assignments.push_back(asgnmnt);
+
+        if (expect(Token::semicolon))
+        {
+            error();
+            goto _error;
+        }
+
+        advance();
+    }
+
+    if (expect(Token::KW_end))
+        goto _error;
+
+    advance();
+
+    return new IterStmt(Cond, assignments);
