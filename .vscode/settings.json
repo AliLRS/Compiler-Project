@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "optional": "cpp",
+        "future": "cpp",
+        "*.def": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
+}
