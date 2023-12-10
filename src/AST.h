@@ -13,6 +13,10 @@ class Final;
 class BinaryOp;
 class Assignment;
 class Comparison;
+class LogicalExpr;
+class IfStmt;
+class IterStmt;
+class elifStmt;
 
 
 // ASTVisitor class defines a visitor pattern to traverse the AST
@@ -28,6 +32,10 @@ public:
   virtual void visit(Assignment &) = 0;      // Visit the assignment expression node
   virtual void visit(Declaration &) = 0;     // Visit the variable declaration node
   virtual void visit(Comparison &) = 0;      // Visit the Comparison node
+  virtual void visit(LogicalExpr &) = 0;     // Visit the LogicalExpr node
+  virtual void visit(IfStmt &) = 0;          // Visit the IfStmt node
+  virtual void visit(IterStmt &) = 0;        // Visit the IterStmt node
+  virtual void visit(elifStmt &) = 0;        // Visit the elifStmt node
 };
 
 // AST class serves as the base class for all AST nodes
@@ -269,6 +277,15 @@ public:
   Expr *getCond() { return Cond; }
 
   assignmentsVector::const_iterator begin() { return assignments.begin(); }
+
+  assignmentsVector::const_iterator end() { return assignments.end(); }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+
+}
 
 class IfStmt : public Expr
 {

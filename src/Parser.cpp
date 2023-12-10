@@ -97,7 +97,7 @@ Expr *Parser::parseDec()
         goto _error;
 
     return new Declaration(Vars, E);
-_error: // TODO: Check this later in case of error :)
+_error: 
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
@@ -316,14 +316,9 @@ Expr *Parser::parseIf()
 
     advance();
 
-    if (expect(Token::l_paren))
-        goto _error;
-
-    advance();
-
     Expr *Cond = parseLogicalExpr();
 
-    if (expect(Token::r_paren))
+    if (expect(Token::colon))
         goto _error;
 
     advance();
@@ -333,17 +328,8 @@ Expr *Parser::parseIf()
 
     advance();
 
-    ifAsgnmnt = parseAssign();
-    ifAssignments.push_back(ifAsgnmnt);
-
-    if (expect(Token::semicolon))
-    {
-        error();
-        goto _error;
-    }
+    Expr *ifAsgnmnt;
     
-    advance();
-
     while (!Tok.is(Token::KW_end))
     {
         ifAsgnmnt = parseAssign();
@@ -354,24 +340,23 @@ Expr *Parser::parseIf()
             error();
             goto _error;
         }
-    }
 
-    if (expect(Token::KW_end))
-        goto _error;
+        advance();
+    }
 
     advance();
 
     while (Tok.is(Token::KW_elif)) {
-        advance();
-
-        if (expect(Token::l_paren))
-            goto _error;
 
         advance();
+        
+        elifStmt *elif;
+        llvm::SmallVector<Expr *, 8> elifAssignments;
+        Expr *Cond;
 
-        Expr *Cond = parseLogicalExpr();
+        Cond = parseLogicalExpr();
 
-        if (expect(Token::r_paren))
+        if (expect(Token::colon))
             goto _error;
 
         advance();
@@ -381,31 +366,22 @@ Expr *Parser::parseIf()
 
         advance();
 
-        elifStmt *elif = new elifStmt(Cond, parseAssign());
-
-        if (expect(Token::semicolon))
-        {
-            error();
-            goto _error;
-        }
-        
-        elifStmts.push_back(elif);
-        advance();
-
         while (!Tok.is(Token::KW_end))
         {
-            elifStmt->push_back(parseAssign());
 
+            elifAssignments.push_back(parseAssign());
+            
             if (expect(Token::semicolon))
             {
                 error();
                 goto _error;
             }
+
+            advance();
         }
 
-        if (expect(Token::KW_end))
-            goto _error;
-
+        elif = new elifStmt(Cond, elifAssignments);
+        elifStmts.push_back(elif);
         advance();
     }
 
@@ -413,26 +389,38 @@ Expr *Parser::parseIf()
     {
         advance();
 
-        if (expect(Token::l_brace))
+        if (expect(Token::colon))
             goto _error;
 
         advance();
 
-        Else = parseProgram();
-
-        if (expect(Token::r_brace))
+        if (expect(Token::KW_begin))
             goto _error;
+        
+        advance();
+
+        while (!Tok.is(Token::KW_end))
+        {
+            elseAssignments.push_back(parseAssign());
+
+            if (expect(Token::semicolon))
+            {
+                error();
+                goto _error;
+            }
+
+            advance();
+        }
 
         advance();
-    }
-    else
-    {
-        Else = nullptr;
-    }
 
-    return new If(E, Then, Else);
+    }
+    // else 
+    //     elseAssignments = nullptr;
 
-_error: // TODO: Check this later in case of error :)
+    return new If(Cond, ifAssignments, elseAssignments, elifStmts);
+
+_error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
@@ -447,17 +435,7 @@ Expr *Parser::parseIter()
 
     advance();
 
-    if (expect(Token::l_paren))
-        goto _error;
-
-    advance();
-
     Expr *Cond = parseLogicalExpr();
-
-    if (expect(Token::r_paren))
-        goto _error;
-
-    advance();
 
     if (expect(Token::KW_begin))
         goto _error;
@@ -478,9 +456,7 @@ Expr *Parser::parseIter()
         advance();
     }
 
-    if (expect(Token::KW_end))
-        goto _error;
-
     advance();
 
     return new IterStmt(Cond, assignments);
+}
