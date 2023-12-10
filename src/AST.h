@@ -54,7 +54,7 @@ public:
 };
 
 // Program class represents a group of expressions in the AST
-class Program : public Expr
+class Program : public AST
 {
   using dataVector = llvm::SmallVector<AST *>;
 
@@ -62,9 +62,9 @@ private:
   dataVector data;                          // Stores the list of expressions
 
 public:
-  Program(llvm::SmallVector<Expr *> data) : data(data) {}
+  Program(llvm::SmallVector<AST *> data) : data(data) {}
 
-  llvm::SmallVector<Expr *> getdata() { return data; }
+  llvm::SmallVector<AST *> getdata() { return data; }
 
   dataVector::const_iterator begin() { return data.begin(); }
 
@@ -77,7 +77,7 @@ public:
 };
 
 // Declaration class represents a variable declaration with an initializer in the AST
-class Declaration : public Expr
+class Declaration : public Program
 {
   using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
   using ValueVector = llvm::SmallVector<Expr *, 8>;
@@ -166,7 +166,7 @@ public:
 };
 
 // Assignment class represents an assignment expression in the AST
-class Assignment : public Expr
+class Assignment : public Program
 {
   public:
   enum AssignKind
@@ -200,7 +200,7 @@ public:
 };
 
 // Comparison class represents a comparison expression in the AST
-class Comparison : public Expr
+class Comparison : public LogicalExpr
 {
   public:
   enum Operator
@@ -216,7 +216,7 @@ class Comparison : public Expr
 private:
   Expr *Left;                                // Left-hand side expression
   Expr *Right;                               // Right-hand side expression
-  Operator Op;                                  // Kind of assignment
+  Operator Op;                               // Kind of assignment
 
 public:
   Comparison(Expr *L, Expr *R, Operator Op) : Left(L), Right(R), Op(Op) {}
@@ -234,7 +234,7 @@ public:
 };
 
 // LogicalExpr class represents a logical expression in the AST
-class LogicalExpr : public Expr
+class LogicalExpr : public AST
 {
   public:
   enum Operator
@@ -244,16 +244,16 @@ class LogicalExpr : public Expr
   };
 
 private:
-  Expr *Left;                                // Left-hand side expression
-  Expr *Right;                               // Right-hand side expression
+  Comparison *Left;                                // Left-hand side expression
+  Comparison *Right;                               // Right-hand side expression
   Operator Op;                                  // Kind of assignment
 
 public:
-  LogicalExpr(Expr *L, Expr *R, Operator Op) : Left(L), Right(R), Op(Op) {}
+  LogicalExpr(Comparison *L, Comparison *R, Operator Op) : Left(L), Right(R), Op(Op) {}
 
-  Expr *getLeft() { return Left; }
+  Comparison *getLeft() { return Left; }
 
-  Expr *getRight() { return Right; }
+  Comparison *getRight() { return Right; }
 
   Operator getOperator() { return Op; }
 
@@ -263,18 +263,18 @@ public:
   }
 };
 
-class elifStmt : public Expr
+class elifStmt : public AST
 {
-using assignmentsVector = llvm::SmallVector<Expr *, 8>;
+using assignmentsVector = llvm::SmallVector<Assignment *, 8>;
 assignmentsVector assignments;
 
 private:
-  Expr *Cond;
+  LogicalExpr *Cond;
 
 public:
-  elifStmt(Expr *Cond, llvm::SmallVector<Expr *, 8> assignments) : Cond(Cond), assignments(assignments) {}
+  elifStmt(LogicalExpr *Cond, llvm::SmallVector<Assignment *, 8> assignments) : Cond(Cond), assignments(assignments) {}
 
-  Expr *getCond() { return Cond; }
+  LogicalExpr *getCond() { return Cond; }
 
   assignmentsVector::const_iterator begin() { return assignments.begin(); }
 
@@ -287,9 +287,9 @@ public:
 
 }
 
-class IfStmt : public Expr
+class IfStmt : public Program
 {
-using assignmentsVector = llvm::SmallVector<Expr *, 8>;
+using assignmentsVector = llvm::SmallVector<Assignment *, 8>;
 using elifVector = llvm::SmallVector<elifStmt *, 8>;
 assignmentsVector ifAssignments;
 assignmentsVector elseAssignments;
@@ -297,12 +297,12 @@ elifVector elifStmts;
 
 
 private:
-  Expr *Cond;
+  LogicalExpr *Cond;
 
 public:
-  IfStmt(Expr *Cond, llvm::SmallVector<Expr *, 8> ifAssignments, llvm::SmallVector<Expr *, 8> elseAssignments, llvm::SmallVector<elifStmt *, 8> elifStmts) : Cond(Cond), ifAssignments(ifAssignments), elseAssignments(elseAssignments), elifStmts(elifStmts) {}
+  IfStmt(LogicalExpr *Cond, llvm::SmallVector<Assignment *, 8> ifAssignments, llvm::SmallVector<Assignment *, 8> elseAssignments, llvm::SmallVector<elifStmt *, 8> elifStmts) : Cond(Cond), ifAssignments(ifAssignments), elseAssignments(elseAssignments), elifStmts(elifStmts) {}
 
-  Expr *getCond() { return Cond; }
+  LogicalExpr *getCond() { return Cond; }
 
   assignmentsVector::const_iterator begin() { return ifAssignments.begin(); }
 
@@ -322,18 +322,18 @@ public:
   }
 };
 
-class IterStmt : public Expr
+class IterStmt : public Program
 {
-using assignmentsVector = llvm::SmallVector<Expr *, 8>;
+using assignmentsVector = llvm::SmallVector<Assignment *, 8>;
 assignmentsVector assignments;
 
 private:
-  Expr *Cond;
+  LogicalExpr *Cond;
 
 public:
-  IterStmt(Expr *Cond, llvm::SmallVector<Expr *, 8> assignments) : Cond(Cond), assignments(assignments) {}
+  IterStmt(LogicalExpr *Cond, llvm::SmallVector<Assignment *, 8> assignments) : Cond(Cond), assignments(assignments) {}
 
-  Expr *getCond() { return Cond; }
+  LogicalExpr *getCond() { return Cond; }
 
   assignmentsVector::const_iterator begin() { return assignments.begin(); }
 

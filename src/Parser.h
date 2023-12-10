@@ -40,17 +40,17 @@ class Parser
         return false;
     }
 
-    AST *parseProgram();
-    Expr *parseDec();
-    Expr *parseAssign();
+    Program *parseProgram();
+    Declaration *parseDec();
+    Assignment *parseAssign();
     Expr *parseExpr();
     Expr *parseTerm();
     Expr *parseFinal();
     Expr *parseFactor();
-    Expr *parseComparison();
-    Expr *parseLogicalExpr();
-    Expr *parseIf();
-    Expr *parseIter();
+    Comparison *parseComparison();
+    LogicalExpr *parseLogicalExpr();
+    IfStmt *parseIf();
+    IterStmt *parseIter();
 
 public:
     // initializes all members and retrieves the first token
