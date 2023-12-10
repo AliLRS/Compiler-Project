@@ -9,41 +9,66 @@ AST *Parser::parse()
 
 AST *Parser::parseProgram()
 {
-    llvm::SmallVector<Expr *> exprs;
+    llvm::SmallVector<AST *> data;
     while (!Tok.is(Token::eoi))
     {
         switch (Tok.getKind())
         {
-        case Token::KW_type:
-            Expr *d;
+        case Token::KW_int:
+            AST *d;
             d = parseDec();
             if (d)
-                exprs.push_back(d);
-            else
-                goto _error2;
+                data.push_back(d);
+            else {
+                error();
+                goto _error;
+            }
             break;
         case Token::ident:
-            Expr *a;
+            AST *a;
             a = parseAssign();
 
             if (!Tok.is(Token::semicolon))
             {
                 error();
-                goto _error2;
+                goto _error;
             }
+
             if (a)
-                exprs.push_back(a);
-            else
-                goto _error2;
+                data.push_back(a);
+            else {
+                error();
+                goto _error
+            }
+            break;
+        case Token::KW_if:
+            AST *i;
+            i = parseIf();
+            if (i)
+                data.push_back(i);
+            else {
+                error();
+                goto _error;
+            }
+            break;
+        case Token::KW_loopc:
+            AST *l;
+            l = parseIter();
+            if (l)
+                data.push_back(l);
+            else {
+                error();
+                goto _error;
+            }
             break;
         default:
-            goto _error2;
+            goto _error;
             break;
         }
-        advance(); // TODO: watch this part
+        advance();
     }
-    return new Program(exprs);
-_error2:
+    return new Program(data);
+_error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
@@ -418,7 +443,7 @@ Expr *Parser::parseIf()
     // else 
     //     elseAssignments = nullptr;
 
-    return new If(Cond, ifAssignments, elseAssignments, elifStmts);
+    return new IfStmt(Cond, ifAssignments, elseAssignments, elifStmts);
 
 _error:
     while (Tok.getKind() != Token::eoi)

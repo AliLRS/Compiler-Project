@@ -56,19 +56,19 @@ public:
 // Program class represents a group of expressions in the AST
 class Program : public Expr
 {
-  using ExprVector = llvm::SmallVector<Expr *>;
+  using dataVector = llvm::SmallVector<AST *>;
 
 private:
-  ExprVector exprs;                          // Stores the list of expressions
+  dataVector data;                          // Stores the list of expressions
 
 public:
-  Program(llvm::SmallVector<Expr *> exprs) : exprs(exprs) {}
+  Program(llvm::SmallVector<Expr *> data) : data(data) {}
 
-  llvm::SmallVector<Expr *> getExprs() { return exprs; }
+  llvm::SmallVector<Expr *> getdata() { return data; }
 
-  ExprVector::const_iterator begin() { return exprs.begin(); }
+  dataVector::const_iterator begin() { return data.begin(); }
 
-  ExprVector::const_iterator end() { return exprs.end(); }
+  dataVector::const_iterator end() { return data.end(); }
 
   virtual void accept(ASTVisitor &V) override
   {
