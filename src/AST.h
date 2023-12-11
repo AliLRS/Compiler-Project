@@ -12,6 +12,7 @@ class Declaration;
 class Final;
 class BinaryOp;
 class Assignment;
+class Logic;
 class Comparison;
 class LogicalExpr;
 class IfStmt;
@@ -31,6 +32,7 @@ public:
   virtual void visit(BinaryOp &) = 0;        // Visit the binary operation node
   virtual void visit(Assignment &) = 0;      // Visit the assignment expression node
   virtual void visit(Declaration &) = 0;     // Visit the variable declaration node
+  virtual void visit(Logic &) {}             // Visit the Logic node
   virtual void visit(Comparison &) = 0;      // Visit the Comparison node
   virtual void visit(LogicalExpr &) = 0;     // Visit the LogicalExpr node
   virtual void visit(IfStmt &) = 0;          // Visit the IfStmt node
@@ -54,6 +56,12 @@ class Expr : public AST
 {
 public:
   Expr() {}
+};
+
+class Logic : public AST
+{
+public:
+  Logic() {}
 };
 
 // Program class represents a group of expressions in the AST
@@ -203,7 +211,7 @@ public:
 };
 
 // Comparison class represents a comparison expression in the AST
-class Comparison : public AST
+class Comparison : public Logic
 {
   public:
   enum Operator
@@ -237,7 +245,7 @@ public:
 };
 
 // LogicalExpr class represents a logical expression in the AST
-class LogicalExpr : public AST
+class LogicalExpr : public Logic
 {
   public:
   enum Operator
@@ -247,16 +255,16 @@ class LogicalExpr : public AST
   };
 
 private:
-  Comparison *Left;                                // Left-hand side expression
-  Comparison *Right;                               // Right-hand side expression
+  Logic *Left;                                // Left-hand side expression
+  Logic *Right;                               // Right-hand side expression
   Operator Op;                                     // Kind of assignment
 
 public:
-  LogicalExpr(Comparison *L, Comparison *R, Operator Op) : Left(L), Right(R), Op(Op) {}
+  LogicalExpr(Logic *L, Logic *R, Operator Op) : Left(L), Right(R), Op(Op) {}
 
-  Comparison *getLeft() { return Left; }
+  Logic *getLeft() { return Left; }
 
-  Comparison *getRight() { return Right; }
+  Logic *getRight() { return Right; }
 
   Operator getOperator() { return Op; }
 
@@ -272,12 +280,12 @@ using assignmentsVector = llvm::SmallVector<Assignment *, 8>;
 assignmentsVector assignments;
 
 private:
-  LogicalExpr *Cond;
+  Logic *Cond;
 
 public:
-  elifStmt(LogicalExpr *Cond, llvm::SmallVector<Assignment *, 8> assignments) : Cond(Cond), assignments(assignments) {}
+  elifStmt(Logic *Cond, llvm::SmallVector<Assignment *, 8> assignments) : Cond(Cond), assignments(assignments) {}
 
-  LogicalExpr *getCond() { return Cond; }
+  Logic *getCond() { return Cond; }
 
   assignmentsVector::const_iterator begin() { return assignments.begin(); }
 
@@ -300,12 +308,12 @@ elifVector elifStmts;
 
 
 private:
-  LogicalExpr *Cond;
+  Logic *Cond;
 
 public:
-  IfStmt(LogicalExpr *Cond, llvm::SmallVector<Assignment *, 8> ifAssignments, llvm::SmallVector<Assignment *, 8> elseAssignments, llvm::SmallVector<elifStmt *, 8> elifStmts) : Cond(Cond), ifAssignments(ifAssignments), elseAssignments(elseAssignments), elifStmts(elifStmts) {}
+  IfStmt(Logic *Cond, llvm::SmallVector<Assignment *, 8> ifAssignments, llvm::SmallVector<Assignment *, 8> elseAssignments, llvm::SmallVector<elifStmt *, 8> elifStmts) : Cond(Cond), ifAssignments(ifAssignments), elseAssignments(elseAssignments), elifStmts(elifStmts) {}
 
-  LogicalExpr *getCond() { return Cond; }
+  Logic *getCond() { return Cond; }
 
   assignmentsVector::const_iterator begin() { return ifAssignments.begin(); }
 
@@ -331,12 +339,12 @@ using assignmentsVector = llvm::SmallVector<Assignment *, 8>;
 assignmentsVector assignments;
 
 private:
-  LogicalExpr *Cond;
+  Logic *Cond;
 
 public:
-  IterStmt(LogicalExpr *Cond, llvm::SmallVector<Assignment *, 8> assignments) : Cond(Cond), assignments(assignments) {}
+  IterStmt(Logic *Cond, llvm::SmallVector<Assignment *, 8> assignments) : Cond(Cond), assignments(assignments) {}
 
-  LogicalExpr *getCond() { return Cond; }
+  Logic *getCond() { return Cond; }
 
   assignmentsVector::const_iterator begin() { return assignments.begin(); }
 

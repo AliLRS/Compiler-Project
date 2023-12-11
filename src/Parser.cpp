@@ -79,6 +79,7 @@ Declaration *Parser::parseDec()
     Expr *E;
     llvm::SmallVector<llvm::StringRef, 8> Vars;
     llvm::SmallVector<Expr *, 8> Values;
+    int count = 1;
     
     if (expect(Token::KW_int))
         goto _error;
@@ -90,7 +91,7 @@ Declaration *Parser::parseDec()
     Vars.push_back(Tok.getText());
     advance();
 
-    int count = 1;
+    
     while (Tok.is(Token::comma))
     {
         advance();
@@ -288,12 +289,12 @@ _error:
     return nullptr;
 }
 
-LogicalExpr *Parser::parseComparison()
+Logic *Parser::parseComparison()
 {
-    LogicalExpr *Res = nullptr;
+    Logic *Res = nullptr;
     if (Tok.is(Token::l_paren)) {
         advance();
-        Res = parseLogicalExpr();
+        Res = parseLogic();
         if (consume(Token::r_paren))
             goto _error;
     }
@@ -329,9 +330,9 @@ _error:
     return nullptr;
 }
 
-LogicalExpr *Parser::parseLogicalExpr()
+Logic *Parser::parseLogic()
 {
-    LogicalExpr *Left = parseComparison();
+    Logic *Left = parseComparison();
     while (Tok.isOneOf(Token::KW_and, Token::KW_or))
     {
         LogicalExpr::Operator Op;
@@ -344,7 +345,7 @@ LogicalExpr *Parser::parseLogicalExpr()
             goto _error;
         }
         advance();
-        LogicalExpr *Right = parseComparison();
+        Logic *Right = parseComparison();
         Left = new LogicalExpr(Left, Right, Op);
     }
     return Left;
@@ -360,13 +361,15 @@ IfStmt *Parser::parseIf()
     llvm::SmallVector<Assignment *, 8> ifAssignments;
     llvm::SmallVector<Assignment *, 8> elseAssignments;
     llvm::SmallVector<elifStmt *, 8> elifStmts;
+    Logic *Cond;
+    Assignment *ifAsgnmnt;
 
     if (expect(Token::KW_if))
         goto _error;
 
     advance();
 
-    LogicalExpr *Cond = parseLogicalExpr();
+    Cond = parseLogic();
 
     if (expect(Token::colon))
         goto _error;
@@ -377,8 +380,6 @@ IfStmt *Parser::parseIf()
         goto _error;
 
     advance();
-
-    Assignment *ifAsgnmnt;
     
     while (!Tok.is(Token::KW_end))
     {
@@ -402,9 +403,9 @@ IfStmt *Parser::parseIf()
         
         elifStmt *elif;
         llvm::SmallVector<Assignment *, 8> elifAssignments;
-        LogicalExpr *Cond;
+        Logic *Cond;
 
-        Cond = parseLogicalExpr();
+        Cond = parseLogic();
 
         if (expect(Token::colon))
             goto _error;
@@ -479,13 +480,14 @@ _error:
 IterStmt *Parser::parseIter()
 {
     llvm::SmallVector<Assignment *, 8> assignments;
+    Logic *Cond;
 
     if (expect(Token::KW_loopc))
         goto _error;
 
     advance();
 
-    LogicalExpr *Cond = parseLogicalExpr();
+    Cond = parseLogic();
 
     if (expect(Token::KW_begin))
         goto _error;

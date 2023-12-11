@@ -40,15 +40,15 @@ class Parser
         return false;
     }
 
-    AST *parseProgram();
+    Program *parseProgram();
     Declaration *parseDec();
     Assignment *parseAssign();
     Expr *parseExpr();
     Expr *parseTerm();
     Expr *parseFinal();
     Expr *parseFactor();
-    LogicalExpr *parseComparison();
-    LogicalExpr *parseLogicalExpr();
+    Logic *parseLogic();
+    Logic *parseComparison();
     IfStmt *parseIf();
     IterStmt *parseIter();
 
@@ -62,7 +62,7 @@ public:
     // get the value of error flag
     bool hasError() { return HasError; }
 
-    AST *parse();
+    Program *parse();
 };
 
 #endif
