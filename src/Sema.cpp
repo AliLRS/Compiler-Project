@@ -24,26 +24,26 @@ public:
 
   // Visit function for Program nodes
   virtual void visit(Program &Node) override { 
-    for (AST I = Node.begin(), E = Node.end(); I != E; ++I)
+    for (dataVector::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
     {
       (*I)->accept(*this); // Visit each child node
     }
   };
 
   virtual void visit(AST &Node) override {
-    if (dynamic_cast<Assignment*>(Node) != nullptr){
+    if (dynamic_cast<Assignment>(Node) != nullptr){
       (Assignment)(Node)->accept(*this);
     }
-    if (dynamic_cast<Declaration*>(Node) != nullptr){
+    if (dynamic_cast<Declaration>(Node) != nullptr){
       (Declaration)(Node)->accept(*this);
     }
-    if (dynamic_cast<IfStmt*>(Node) != nullptr){
+    if (dynamic_cast<IfStmt>(Node) != nullptr){
       (IfStmt)(Node)->accept(*this);
     }
-    if (dynamic_cast<elifStmt*>(Node) != nullptr){
+    if (dynamic_cast<elifStmt>(Node) != nullptr){
       (elifStmt)(Node)->accept(*this);
     }
-    if (dynamic_cast<IterStmt*>(Node) != nullptr){
+    if (dynamic_cast<IterStmt>(Node) != nullptr){
       (IterStmt)(Node)->accept(*this);
     }
   }
@@ -105,12 +105,12 @@ public:
   };
 
   virtual void visit(Declaration &Node) override {
-    for (llvm::StringRef I = Node.varBegin(), E = Node.varEnd(); I != E;
+    for (VarVector::const_iterator I = Node.varBegin(), E = Node.varEnd(); I != E;
          ++I) {
       if (!Scope.insert(*I).second)
         error(Twice, *I); // If the insertion fails (element already exists in Scope), report a "Twice" error
     }
-    for (Expr I = Node.valBegin(), E = Node.valEnd(); I != E; ++I){
+    for (ValueVector::const_iterator I = Node.valBegin(), E = Node.valEnd(); I != E; ++I){
       (BinaryOp)(*I)->accept(*this); // If the Declaration node has an expression, recursively visit the expression node
     }
   };
@@ -124,36 +124,36 @@ public:
     }
   };
 
-  virtual void visit(LogicalExpr &Node) override {
+  virtual void visit(Logic &Node) override {
     if(Node.getLeft()){
-      Node.getLeft()->accept(*this);
+      (LogicalExpr)Node.getLeft()->accept(*this);
     }
     if(Node.getRight()){
-      Node.getRight()->accept(*this);
+      (LogicalExpr)Node.getRight()->accept(*this);
     }
   };
 
   virtual void visit(IfStmt &Node) override {
-    LogicalExpr *l = Node.getCond();
+    Logic *l = Node.getCond();
     (*l)->accept(*this);
 
-    for (Assignment I = Node.begin(), E = Node.end(); I != E; ++I) {
+    for (assignmentsVector::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I) {
       (*I)->accept(*this);
     }
-    for (Assignment I = Node.beginElse(), E = Node.endElse(); I != E; ++I){
+    for (assignmentsVector::const_iterator I = Node.beginElse(), E = Node.endElse(); I != E; ++I){
       (*I)->accept(*this);
     }
-    for (elifStmt I = Node.beginElif(), E = Node.endElif(); I != E; ++I){
+    for (elifVector::const_iterator I = Node.beginElif(), E = Node.endElif(); I != E; ++I){
       (*I)->accept(*this);
     }
   };
 
   virtual void visit(elifStmt &Node) override {
-    LogicalExpr *l = Node.getCond();
-    (*l)->accept(*this);
+    Logic *l = Node.getCond();
+    (LogicalExpr)(*l)->accept(*this);
 
     for (Assignment I = Node.begin(), E = Node.end(); I != E; ++I) {
-      (*I)->accept(*this);
+      (LogicalExpr)(*I)->accept(*this);
     }
   }
 
