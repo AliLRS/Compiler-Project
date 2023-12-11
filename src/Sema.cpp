@@ -31,12 +31,12 @@ public:
   };
 
   virtual void visit(AST &Node) override {
-    Node.accept(*this);
+    Node->accept(*this);
   }
 
   // Visit function for Final nodes
   virtual void visit(Final &Node) override {
-    if (Node->getKind() == Final::Ident) {
+    if (Node.getKind() == Final::Ident) {
       // Check if identifier is in the scope
       if (Scope.find(Node.getVal()) == Scope.end())
         error(Not, Node.getVal());
@@ -52,14 +52,14 @@ public:
       HasError = true;
 
     if (right)
-      right.accept(*this);
+      right->accept(*this);
     else
       HasError = true;
 
     if (Node.getOperator() == BinaryOp::Operator::Div) {
-      Final* f = (Final)right;
+      Final* f = (Final)(right);
 
-      if (f->getKind() == Final::ValueKind::Number) {
+      if (f.getKind() == Final::ValueKind::Number) {
         llvm::StringRef intval = f.getVal()
 
         if (intval == "0") {
@@ -76,19 +76,19 @@ public:
 
     dest->accept(*this);
 
-    if (dest->getKind() == Final::Number) {
+    if (dest.getKind() == Final::Number) {
         llvm::errs() << "Assignment destination must be an identifier.";
         HasError = true;
     }
 
-    if (dest->getKind() == Final::Ident) {
+    if (dest.getKind() == Final::Ident) {
       // Check if the identifier is in the scope
       if (Scope.find(dest->getVal()) == Scope.end())
         error(Not, dest->getVal());
     }
 
     if (Node.getRight())
-      (BinaryOp)(Node.getRight())->accept(*this);
+      ((BinaryOp)(Node.getRight()))->accept(*this);
   };
 
   virtual void visit(Declaration &Node) override {
@@ -98,31 +98,31 @@ public:
         error(Twice, *I); // If the insertion fails (element already exists in Scope), report a "Twice" error
     }
     for (llvm::SmallVector<Expr *, 8>::const_iterator I = Node.valBegin(), E = Node.valEnd(); I != E; ++I){
-      (BinaryOp)(*I).accept(*this); // If the Declaration node has an expression, recursively visit the expression node
+      ((BinaryOp)(*I))->accept(*this); // If the Declaration node has an expression, recursively visit the expression node
     }
   };
 
   virtual void visit(Comparison &Node) override {
     if(Node.getLeft()){
-      (BinaryOp)(Node.getLeft()).accept(*this);
+      ((BinaryOp)(Node.getLeft()))->accept(*this);
     }
     if(Node.getRight()){
-      (BinaryOp)(Node.getRight()).accept(*this);
+      ((BinaryOp)(Node.getRight()))->accept(*this);
     }
   };
 
   virtual void visit(LogicalExpr &Node) override {
     if(Node.getLeft()){
-      (LogicalExpr)Node.getLeft().accept(*this);
+      ((LogicalExpr)(Node.getLeft()))->accept(*this);
     }
     if(Node.getRight()){
-      (LogicalExpr)Node.getRight().accept(*this);
+      ((LogicalExpr)(Node.getRight()))->accept(*this);
     }
   };
 
   virtual void visit(IfStmt &Node) override {
     Logic *l = Node.getCond();
-    (*l).accept(*this);
+    (*l)->accept(*this);
 
     for (llvm::SmallVector<Assignment *, 8>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I) {
       (*I)->accept(*this);
@@ -137,10 +137,10 @@ public:
 
   virtual void visit(elifStmt &Node) override {
     Logic* l = Node.getCond();
-    (LogicalExpr)(*l)->accept(*this);
+    ((LogicalExpr)(*l))->accept(*this);
 
     for (llvm::SmallVector<Assignment *, 8>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I) {
-      (LogicalExpr)(*I)->accept(*this);
+      ((LogicalExpr)(*I))->accept(*this);
     }
   }
 
