@@ -24,26 +24,26 @@ public:
 
   // Visit function for Program nodes
   virtual void visit(Program &Node) override { 
-    for (dataVector::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
+    for (llvm::SmallVector<AST *>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
     {
       (*I)->accept(*this); // Visit each child node
     }
   };
 
   virtual void visit(AST &Node) override {
-    if (dynamic_cast<Assignment>(Node) != nullptr){
+    if (dynamic_cast<Assignment*>(&Node) != nullptr){
       (Assignment)(Node)->accept(*this);
     }
-    if (dynamic_cast<Declaration>(Node) != nullptr){
+    if (dynamic_cast<Declaration*>(&Node) != nullptr){
       (Declaration)(Node)->accept(*this);
     }
-    if (dynamic_cast<IfStmt>(Node) != nullptr){
+    if (dynamic_cast<IfStmt*>(&Node) != nullptr){
       (IfStmt)(Node)->accept(*this);
     }
-    if (dynamic_cast<elifStmt>(Node) != nullptr){
+    if (dynamic_cast<elifStmt*>(&Node) != nullptr){
       (elifStmt)(Node)->accept(*this);
     }
-    if (dynamic_cast<IterStmt>(Node) != nullptr){
+    if (dynamic_cast<IterStmt*>(&Node) != nullptr){
       (IterStmt)(Node)->accept(*this);
     }
   }
