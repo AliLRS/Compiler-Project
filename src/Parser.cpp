@@ -102,7 +102,7 @@ Declaration *Parser::parseDec()
         advance();
     }
 
-    if (Tok.is(Token::eq))
+    if (Tok.is(Token::assign))
     {
         advance();
         E = parseExpr();
