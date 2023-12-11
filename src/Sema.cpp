@@ -26,7 +26,7 @@ public:
   virtual void visit(Program &Node) override { 
     for (llvm::SmallVector<AST *>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
     {
-      (*I).accept(*this); // Visit each child node
+      (*I)->accept(*this); // Visit each child node
     }
   };
 
@@ -36,7 +36,7 @@ public:
 
   // Visit function for Final nodes
   virtual void visit(Final &Node) override {
-    if (Node.getKind() == Final::Ident) {
+    if (Node->getKind() == Final::Ident) {
       // Check if identifier is in the scope
       if (Scope.find(Node.getVal()) == Scope.end())
         error(Not, Node.getVal());
@@ -45,9 +45,9 @@ public:
 
   // Visit function for BinaryOp nodes
   virtual void visit(BinaryOp &Node) override {
-    Expr right = Node.getRight();
+    Expr* right = Node.getRight();
     if (Node.getLeft())
-      Node.getLeft().accept(*this);
+      Node.getLeft()->accept(*this);
     else
       HasError = true;
 
@@ -56,11 +56,11 @@ public:
     else
       HasError = true;
 
-    if (Node.getOperator() == BinaryOp::Operator::Div && right) {
-      Final * f = (Final *)right;
+    if (Node.getOperator() == BinaryOp::Operator::Div) {
+      Final* f = (Final)right;
 
-      if (right && f.getKind() == Final::ValueKind::Number) {
-        String intval = f.getVal()
+      if (f->getKind() == Final::ValueKind::Number) {
+        llvm::StringRef intval = f.getVal()
 
         if (intval == "0") {
           llvm::errs() << "Division by zero is not allowed." << "\n";
@@ -76,19 +76,19 @@ public:
 
     dest->accept(*this);
 
-    if (dest.getKind() == Final::Number) {
+    if (dest->getKind() == Final::Number) {
         llvm::errs() << "Assignment destination must be an identifier.";
         HasError = true;
     }
 
-    if (dest.getKind() == Final::Ident) {
+    if (dest->getKind() == Final::Ident) {
       // Check if the identifier is in the scope
-      if (Scope.find(dest.getVal()) == Scope.end())
-        error(Not, dest.getVal());
+      if (Scope.find(dest->getVal()) == Scope.end())
+        error(Not, dest->getVal());
     }
 
     if (Node.getRight())
-      (BinaryOp)(Node.getRight()).accept(*this);
+      (BinaryOp)(Node.getRight())->accept(*this);
   };
 
   virtual void visit(Declaration &Node) override {
@@ -111,7 +111,7 @@ public:
     }
   };
 
-  virtual void visit(Logic &Node) override {
+  virtual void visit(LogicalExpr &Node) override {
     if(Node.getLeft()){
       (LogicalExpr)Node.getLeft().accept(*this);
     }
@@ -125,22 +125,22 @@ public:
     (*l).accept(*this);
 
     for (llvm::SmallVector<Assignment *, 8>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I) {
-      (*I).accept(*this);
+      (*I)->accept(*this);
     }
     for (llvm::SmallVector<Assignment *, 8>::const_iterator I = Node.beginElse(), E = Node.endElse(); I != E; ++I){
-      (*I).accept(*this);
+      (*I)->accept(*this);
     }
     for (llvm::SmallVector<elifStmt *, 8>::const_iterator I = Node.beginElif(), E = Node.endElif(); I != E; ++I){
-      (*I).accept(*this);
+      (*I)->accept(*this);
     }
   };
 
   virtual void visit(elifStmt &Node) override {
-    Logic *l = Node.getCond();
-    (LogicalExpr)(*l).accept(*this);
+    Logic* l = Node.getCond();
+    (LogicalExpr)(*l)->accept(*this);
 
     for (llvm::SmallVector<Assignment *, 8>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I) {
-      (LogicalExpr)(*I).accept(*this);
+      (LogicalExpr)(*I)->accept(*this);
     }
   }
 
@@ -152,7 +152,7 @@ bool Sema::semantic(Program *Tree) {
     return false; // If the input AST is not valid, return false indicating no errors
 
   InputCheck Check; // Create an instance of the InputCheck class for semantic analysis
-  Tree.accept(Check); // Initiate the semantic analysis by traversing the AST using the accept function
+  Tree->accept(Check); // Initiate the semantic analysis by traversing the AST using the accept function
 
   return Check.hasError(); // Return the result of Check.hasError() indicating if any errors were detected during the analysis
 }
