@@ -31,21 +31,7 @@ public:
   };
 
   virtual void visit(AST &Node) override {
-    if (dynamic_cast<Assignment*>(&Node) != nullptr){
-      (Assignment)(Node)->accept(*this);
-    }
-    if (dynamic_cast<Declaration*>(&Node) != nullptr){
-      (Declaration)(Node)->accept(*this);
-    }
-    if (dynamic_cast<IfStmt*>(&Node) != nullptr){
-      (IfStmt)(Node)->accept(*this);
-    }
-    if (dynamic_cast<elifStmt*>(&Node) != nullptr){
-      (elifStmt)(Node)->accept(*this);
-    }
-    if (dynamic_cast<IterStmt*>(&Node) != nullptr){
-      (IterStmt)(Node)->accept(*this);
-    }
+    Node->accept(*this);
   }
 
   // Visit function for Final nodes
