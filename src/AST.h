@@ -43,7 +43,10 @@ class AST
 {
 public:
   virtual ~AST() {}
-  virtual void accept(ASTVisitor &V) = 0;    // Accept a visitor for traversal
+  virtual void accept(ASTVisitor &V) //= 0;    // Accept a visitor for traversal
+  {
+    V.visit(*this);
+  }
 };
 
 // Expr class represents an expression in the AST
@@ -63,6 +66,7 @@ private:
 
 public:
   Program(llvm::SmallVector<AST *> data) : data(data) {}
+  Program() = default;
 
   llvm::SmallVector<AST *> getdata() { return data; }
 
@@ -86,16 +90,15 @@ class Declaration : public Program
 
 public:
   // Declaration(llvm::SmallVector<llvm::StringRef, 8> Vars, Expr *E) : Vars(Vars), E(E) {}
-  Declaration(llvm::SmallVector<llvm::StringRef, 8> Vars, llvm::SmallVector<Expr *, 8> Values) :
-  Vars(Vars), Values(Values) {}
+  Declaration(llvm::SmallVector<llvm::StringRef, 8> Vars, llvm::SmallVector<Expr *, 8> Values) : Vars(Vars), Values(Values) {}
 
-  VarVector::const_iterator begin() { return Vars.begin(); }
+  VarVector::const_iterator varBegin() { return Vars.begin(); }
 
-  VarVector::const_iterator end() { return Vars.end(); }
+  VarVector::const_iterator varEnd() { return Vars.end(); }
 
-  // ValueVector::const_iterator begin() { return Values.begin(); }
+  ValueVector::const_iterator valBegin() { return Values.begin(); }
 
-  // ValueVector::const_iterator end() { return Values.end(); }
+  ValueVector::const_iterator valEnd() { return Values.end(); }
 
   virtual void accept(ASTVisitor &V) override
   {
@@ -200,7 +203,7 @@ public:
 };
 
 // Comparison class represents a comparison expression in the AST
-class Comparison : public LogicalExpr
+class Comparison : public AST
 {
   public:
   enum Operator
@@ -246,7 +249,7 @@ class LogicalExpr : public AST
 private:
   Comparison *Left;                                // Left-hand side expression
   Comparison *Right;                               // Right-hand side expression
-  Operator Op;                                  // Kind of assignment
+  Operator Op;                                     // Kind of assignment
 
 public:
   LogicalExpr(Comparison *L, Comparison *R, Operator Op) : Left(L), Right(R), Op(Op) {}
@@ -285,7 +288,7 @@ public:
     V.visit(*this);
   }
 
-}
+};
 
 class IfStmt : public Program
 {

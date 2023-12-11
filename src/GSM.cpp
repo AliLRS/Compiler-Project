@@ -27,7 +27,7 @@ int main(int argc, const char **argv)
     Parser Parser(Lex);
 
     // Parse the input expression and generate an abstract syntax tree (AST).
-    AST *Tree = Parser.parse();
+    Program *Tree = Parser.parse();
 
     // Check if parsing was successful or if there were any syntax errors.
     if (!Tree || Parser.hasError())

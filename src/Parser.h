@@ -40,14 +40,14 @@ class Parser
         return false;
     }
 
-    Program *parseProgram();
+    AST *parseProgram();
     Declaration *parseDec();
     Assignment *parseAssign();
     Expr *parseExpr();
     Expr *parseTerm();
     Expr *parseFinal();
     Expr *parseFactor();
-    Comparison *parseComparison();
+    LogicalExpr *parseComparison();
     LogicalExpr *parseLogicalExpr();
     IfStmt *parseIf();
     IterStmt *parseIter();

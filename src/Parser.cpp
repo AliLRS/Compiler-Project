@@ -1,13 +1,13 @@
 #include "Parser.h"
 
 // main point is that the whole input has been consumed
-AST *Parser::parse()
+Program *Parser::parse()
 {
-    AST *Res = parseProgram();
+    Program *Res = parseProgram();
     return Res;
 }
 
-AST *Parser::parseProgram()
+Program *Parser::parseProgram()
 {
     llvm::SmallVector<AST *> data;
     while (!Tok.is(Token::eoi))
@@ -38,7 +38,7 @@ AST *Parser::parseProgram()
                 data.push_back(a);
             else {
                 error();
-                goto _error
+                goto _error;
             }
             break;
         case Token::KW_if:
@@ -101,7 +101,7 @@ Declaration *Parser::parseDec()
         advance();
     }
 
-    if (Tok.is(Token::equal))
+    if (Tok.is(Token::eq))
     {
         advance();
         E = parseExpr();
@@ -121,7 +121,7 @@ Declaration *Parser::parseDec()
     if (expect(Token::semicolon))
         goto _error;
 
-    return new Declaration(Vars, E);
+    return new Declaration(Vars, Values);
 _error: 
     while (Tok.getKind() != Token::eoi)
         advance();
@@ -136,13 +136,13 @@ Assignment *Parser::parseAssign()
 
     F = (Final *)(parseFinal());
 
-    if (Tok.is(Token::equal))
+    if (Tok.is(Token::assign))
     {
-        AK = Assignment::Equal;
+        AK = Assignment::Assign;
     }
     else if (Tok.is(Token::plus_assign))
     {
-        AK = Assignment::Plus_assign
+        AK = Assignment::Plus_assign;
     }
     else if (Tok.is(Token::minus_assign))
     {
@@ -150,11 +150,11 @@ Assignment *Parser::parseAssign()
     }
     else if (Tok.is(Token::star_assign))
     {
-        AK = Assignment::Mul_assign;
+        AK = Assignment::Star_assign;
     }
     else if (Tok.is(Token::slash_assign))
     {
-        AK = Assignment::Div_assign;
+        AK = Assignment::Slash_assign;
     }
     else if (Tok.is(Token::mod_assign))
     {
@@ -318,7 +318,7 @@ LogicalExpr *Parser::parseComparison()
                 }
             advance();
             Expr *Right = parseExpr();
-            Res = new Comparison(Left, Right, Op)
+            Res = new Comparison(Left, Right, Op);
     }
     
     return Res;
@@ -332,12 +332,12 @@ _error:
 LogicalExpr *Parser::parseLogicalExpr()
 {
     LogicalExpr *Left = parseComparison();
-    while (Tok.isOneOf(Token::and, Token::or))
+    while (Tok.isOneOf(Token::KW_and, Token::KW_or))
     {
         LogicalExpr::Operator Op;
-        if (Tok.is(Token::and))
+        if (Tok.is(Token::KW_and))
             Op = LogicalExpr::And;
-        else if (Tok.is(Token::or))
+        else if (Tok.is(Token::KW_or))
             Op = LogicalExpr::Or;
         else {
             error();
