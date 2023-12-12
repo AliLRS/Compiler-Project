@@ -27,7 +27,7 @@ public:
   // Virtual visit functions for each AST node type
   virtual void visit(AST &) {}               // Visit the base AST node
   virtual void visit(Expr &) {}              // Visit the expression node
-  virtual void visit(Program &) = 0;         // Visit the group of expressions node
+  virtual void visit(Program &) {}           // Visit the group of expressions node
   virtual void visit(Final &) = 0;           // Visit the Final node
   virtual void visit(BinaryOp &) = 0;        // Visit the binary operation node
   virtual void visit(Assignment &) = 0;      // Visit the assignment expression node
@@ -45,10 +45,7 @@ class AST
 {
 public:
   virtual ~AST() {}
-  virtual void accept(ASTVisitor &V) //= 0;    // Accept a visitor for traversal
-  {
-    V.visit(*this);
-  }
+  virtual void accept(ASTVisitor &V) = 0;    // Accept a visitor for traversal
 };
 
 // Expr class represents an expression in the AST
