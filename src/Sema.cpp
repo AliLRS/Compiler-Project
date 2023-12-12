@@ -2,7 +2,8 @@
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/raw_ostream.h"
 
-namespace {
+
+namespace nms{
 class InputCheck : public ASTVisitor {
   llvm::StringSet<> Scope; // StringSet to store declared variables
   bool HasError; // Flag to indicate if an error occurred
@@ -24,6 +25,7 @@ public:
 
   // Visit function for Program nodes
   virtual void visit(Program &Node) override { 
+
     for (llvm::SmallVector<AST *>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
     {
       (*I)->accept(*this); // Visit each child node
@@ -81,14 +83,29 @@ public:
         HasError = true;
     }
 
-    if (dest->getKind() == Final::Ident) {
-      // Check if the identifier is in the scope
-      if (Scope.find(dest->getVal()) == Scope.end())
-        error(Not, dest->getVal());
+    Expr *Right = Node.getRight();
+    if (Right)
+      Right->accept(*this);
+    else{
+      HasError=true;
     }
 
-    if (Node.getRight())
-      (Node.getRight())->accept(*this);
+    if (Node.getAssignKind() == Assignment::AssignKind::Slash_assign) {
+
+      Final* f = (Final*)(Right);
+      if (f)
+      {
+        if (f->getKind() == Final::ValueKind::Number) {
+        llvm::StringRef intval = f->getVal();
+
+        if (intval == "0") {
+          llvm::errs() << "Division by zero is not allowed." << "\n";
+          HasError = true;
+        }
+        }
+      }
+      
+    }
   };
 
   virtual void visit(Declaration &Node) override {
@@ -142,7 +159,16 @@ public:
     for (llvm::SmallVector<Assignment *, 8>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I) {
       (*I)->accept(*this);
     }
-  }
+  };
+
+  virtual void visit(IterStmt &Node) override {
+    Logic* l = Node.getCond();
+    (*l).accept(*this);
+
+    for (llvm::SmallVector<Assignment *, 8>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I) {
+      (*I)->accept(*this);
+    }
+  };
 
 };
 }
@@ -150,8 +176,7 @@ public:
 bool Sema::semantic(Program *Tree) {
   if (!Tree)
     return false; // If the input AST is not valid, return false indicating no errors
-
-  InputCheck *Check; // Create an instance of the InputCheck class for semantic analysis
+  nms::InputCheck *Check = new nms::InputCheck();;// Create an instance of the InputCheck class for semantic analysis
   Tree->accept(*Check); // Initiate the semantic analysis by traversing the AST using the accept function
 
   return Check->hasError(); // Return the result of Check.hasError() indicating if any errors were detected during the analysis
