@@ -56,7 +56,6 @@ ns{
     // Visit function for the Program node in the AST.
     virtual void visit(Program &Node) override
     {
-      llvm::errs() << "Node Program Visisted\n";
       // Iterate over the children of the Program node and visit each child.
       for (llvm::SmallVector<AST *>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
     {
@@ -104,7 +103,6 @@ ns{
 
     virtual void visit(BinaryOp &Node) override
     {
-      llvm::errs() << "Node BinaryOp visited.\n";
       // Visit the left-hand side of the binary operation and get its value.
       Node.getLeft()->accept(*this);
       Value *Left = V;
@@ -149,12 +147,11 @@ ns{
 
     virtual void visit(Declaration &Node) override
     {
-      llvm::errs() << "Node Declaration visited.\n";
       llvm::SmallVector<Value *, 8> vals;
 
       llvm::SmallVector<Expr *, 8>::const_iterator E = Node.valBegin();
       for (llvm::SmallVector<llvm::StringRef, 8>::const_iterator Var = Node.varBegin(), End = Node.varEnd(); Var != End; ++Var){
-        if (E)
+        if (E<Node.valEnd())
         {
           (*E)->accept(*this); // If the Declaration node has an expression, recursively visit the expression node
           vals.push_back(V);
@@ -163,20 +160,22 @@ ns{
         {
           vals.push_back(nullptr);
         }
-        ++E;
+        E++;
       }
+      StringRef Var;
+      Value* val;
       llvm::SmallVector<Value *, 8>::const_iterator itVal = vals.begin();
       for (llvm::SmallVector<llvm::StringRef, 8>::const_iterator S = Node.varBegin(), End = Node.varEnd(); S != End; ++S){
-        llvm::errs() << "final alloca.\n";
-        StringRef Var = *S;
+        
+        Var = *S;
 
         // Create an alloca instruction to allocate memory for the variable.
         nameMap[Var] = Builder.CreateAlloca(Int32Ty);
+        
         // Store the initial value (if any) in the variable's memory location.
-        Value * val = (Value *) itVal;
-        if (val != nullptr)
+        if (*itVal != nullptr)
         {
-          Builder.CreateStore(val, nameMap[Var]);
+          Builder.CreateStore(*itVal, nameMap[Var]);
         }
         else
         {
@@ -217,7 +216,6 @@ void CodeGen::compile(Program *Tree)
   // Create an instance of the ToIRVisitor and run it on the AST to generate LLVM IR.
   ns::ToIRVisitor *ToIR = new ns::ToIRVisitor(M);
 
-  llvm::errs() << "Create IR visitor.\n";
 
   ToIR->run(Tree);
 
