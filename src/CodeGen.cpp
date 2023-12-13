@@ -3,12 +3,13 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/ADT/SmallVector.h"
 
 using namespace llvm;
 
 // Define a visitor class for generating LLVM IR from the AST.
 namespace
-{
+ns{
   class ToIRVisitor : public ASTVisitor
   {
     Module *M;
@@ -55,6 +56,7 @@ namespace
     // Visit function for the Program node in the AST.
     virtual void visit(Program &Node) override
     {
+      llvm::errs() << "Node Program Visisted\n";
       // Iterate over the children of the Program node and visit each child.
       for (llvm::SmallVector<AST *>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
     {
@@ -102,6 +104,7 @@ namespace
 
     virtual void visit(BinaryOp &Node) override
     {
+      llvm::errs() << "Node BinaryOp visited.\n";
       // Visit the left-hand side of the binary operation and get its value.
       Node.getLeft()->accept(*this);
       Value *Left = V;
@@ -128,27 +131,29 @@ namespace
       case BinaryOp::Mod:
         V = Builder.CreateSRem(Left, Right);
         break;
-      case BinaryOp::Exp:
-        V = CreateExp(Left, Right);
-        break;
+      // case BinaryOp::Exp:
+      //   V = CreateExp(Left, Right);
+      //   break;
       }
     };
 
-    Value CreateExp(Value *Left, Value *Right)
-    {
-      Value res = Int32Zero;
-      for (int i = 0; i < Right; i++)
-      {
-        res += Builder.CreateNSWMul(res, Left);
-      }
-      return res;
-    }
+    // Value CreateExp(Value *Left, Value *Right)
+    // {
+    //   Value res = Int32Zero;
+    //   for (int i = 0; i < Right; i++)
+    //   {
+    //     res += Builder.CreateNSWMul(res, Left);
+    //   }
+    //   return res;
+    // }
 
     virtual void visit(Declaration &Node) override
     {
+      llvm::errs() << "Node Declaration visited.\n";
       llvm::SmallVector<Value *, 8> vals;
 
-      for (llvm::SmallVector<Expr *, 8>::const_iterator E = Node.valBegin(), llvm::SmallVector<llvm::StringRef, 8>::const_iterator V = Node.varBegin(), End = Node.varEnd(); V != End; ++V, ++I){
+      llvm::SmallVector<Expr *, 8>::const_iterator E = Node.valBegin();
+      for (llvm::SmallVector<llvm::StringRef, 8>::const_iterator Var = Node.varBegin(), End = Node.varEnd(); Var != End; ++Var){
         if (E)
         {
           (*E)->accept(*this); // If the Declaration node has an expression, recursively visit the expression node
@@ -158,16 +163,17 @@ namespace
         {
           vals.push_back(nullptr);
         }
+        ++E;
       }
-
-      for (llvm::SmallVector<llvm::StringRef, 8>::const_iterator V = Node.varEnd(), First = Node.varBegin(); V != First; --V){
-
-        StringRef Var = *V;
+      llvm::SmallVector<Value *, 8>::const_iterator itVal = vals.begin();
+      for (llvm::SmallVector<llvm::StringRef, 8>::const_iterator S = Node.varBegin(), End = Node.varEnd(); S != End; ++S){
+        llvm::errs() << "final alloca.\n";
+        StringRef Var = *S;
 
         // Create an alloca instruction to allocate memory for the variable.
         nameMap[Var] = Builder.CreateAlloca(Int32Ty);
-        Value *val = vals.pop_back();
         // Store the initial value (if any) in the variable's memory location.
+        Value * val = (Value *) itVal;
         if (val != nullptr)
         {
           Builder.CreateStore(val, nameMap[Var]);
@@ -176,7 +182,28 @@ namespace
         {
           Builder.CreateStore(Int32Zero, nameMap[Var]);
         }
+        itVal++;
       }
+    };
+
+    virtual void visit(Comparison &Node) override{
+      return;
+    };
+
+    virtual void visit(IterStmt &Node) override{
+      return;
+    };
+
+    virtual void visit(IfStmt &Node) override{
+      return;
+    };
+
+    virtual void visit(elifStmt &Node) override{
+      return;
+    };
+    
+    virtual void visit(LogicalExpr &Node) override{
+      return;
     };
   };
 }; // namespace
@@ -188,8 +215,11 @@ void CodeGen::compile(Program *Tree)
   Module *M = new Module("simple-compiler", Ctx);
 
   // Create an instance of the ToIRVisitor and run it on the AST to generate LLVM IR.
-  ToIRVisitor ToIR(M);
-  ToIR.run(Tree);
+  ns::ToIRVisitor *ToIR = new ns::ToIRVisitor(M);
+
+  llvm::errs() << "Create IR visitor.\n";
+
+  ToIR->run(Tree);
 
   // Print the generated module to the standard output.
   M->print(outs(), nullptr);
