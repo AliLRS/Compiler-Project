@@ -35,7 +35,7 @@ namespace
     }
 
     // Entry point for generating LLVM IR from the AST.
-    void run(AST *Tree)
+    void run(Program *Tree)
     {
       // Create the main function with the appropriate function type.
       FunctionType *MainFty = FunctionType::get(Int32Ty, {Int32Ty, Int8PtrPtrTy}, false);
@@ -52,14 +52,14 @@ namespace
       Builder.CreateRet(Int32Zero);
     }
 
-    // Visit function for the GSM node in the AST.
-    virtual void visit(GSM &Node) override
+    // Visit function for the Program node in the AST.
+    virtual void visit(Program &Node) override
     {
-      // Iterate over the children of the GSM node and visit each child.
-      for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
-      {
-        (*I)->accept(*this);
-      }
+      // Iterate over the children of the Program node and visit each child.
+      for (llvm::SmallVector<AST *>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
+    {
+      (*I)->accept(*this); // Visit each child node
+    }
     };
 
     virtual void visit(Assignment &Node) override
@@ -69,7 +69,7 @@ namespace
       Value *val = V;
 
       // Get the name of the variable being assigned.
-      auto varName = Node.getLeft()->getVal();
+      llvm::StringRef varName = Node.getLeft()->getVal();
 
       // Create a store instruction to assign the value to the variable.
       Builder.CreateStore(val, nameMap[varName]);
@@ -84,16 +84,16 @@ namespace
       CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
     };
 
-    virtual void visit(Factor &Node) override
+    virtual void visit(Final &Node) override
     {
-      if (Node.getKind() == Factor::Ident)
+      if (Node.getKind() == Final::Ident)
       {
-        // If the factor is an identifier, load its value from memory.
+        // If the Final is an identifier, load its value from memory.
         V = Builder.CreateLoad(Int32Ty, nameMap[Node.getVal()]);
       }
       else
       {
-        // If the factor is a literal, convert it to an integer and create a constant.
+        // If the Final is a literal, convert it to an integer and create a constant.
         int intval;
         Node.getVal().getAsInteger(10, intval);
         V = ConstantInt::get(Int32Ty, intval, true);
@@ -125,43 +125,67 @@ namespace
       case BinaryOp::Div:
         V = Builder.CreateSDiv(Left, Right);
         break;
+      case BinaryOp::Mod:
+        V = Builder.CreateSRem(Left, Right);
+        break;
+      case BinaryOp::Exp:
+        V = CreateExp(Left, Right);
+        break;
       }
     };
 
+    Value CreateExp(Value *Left, Value *Right)
+    {
+      Value res = Int32Zero;
+      for (int i = 0; i < Right; i++)
+      {
+        res += Builder.CreateNSWMul(res, Left);
+      }
+      return res;
+    }
+
     virtual void visit(Declaration &Node) override
     {
-      Value *val = nullptr;
+      llvm::SmallVector<Value *, 8> vals;
 
-      if (Node.getExpr())
-      {
-        // If there is an expression provided, visit it and get its value.
-        Node.getExpr()->accept(*this);
-        val = V;
+      for (llvm::SmallVector<Expr *, 8>::const_iterator E = Node.valBegin(), llvm::SmallVector<llvm::StringRef, 8>::const_iterator V = Node.varBegin(), End = Node.varEnd(); V != End; ++V, ++I){
+        if (E)
+        {
+          (*E)->accept(*this); // If the Declaration node has an expression, recursively visit the expression node
+          vals.push_back(V);
+        }
+        else 
+        {
+          vals.push_back(nullptr);
+        }
       }
 
-      // Iterate over the variables declared in the declaration statement.
-      for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
-      {
-        StringRef Var = *I;
+      for (llvm::SmallVector<llvm::StringRef, 8>::const_iterator V = Node.varEnd(), First = Node.varBegin(); V != First; --V){
+
+        StringRef Var = *V;
 
         // Create an alloca instruction to allocate memory for the variable.
         nameMap[Var] = Builder.CreateAlloca(Int32Ty);
-
+        Value *val = vals.pop_back();
         // Store the initial value (if any) in the variable's memory location.
         if (val != nullptr)
         {
           Builder.CreateStore(val, nameMap[Var]);
+        }
+        else
+        {
+          Builder.CreateStore(Int32Zero, nameMap[Var]);
         }
       }
     };
   };
 }; // namespace
 
-void CodeGen::compile(AST *Tree)
+void CodeGen::compile(Program *Tree)
 {
   // Create an LLVM context and a module.
   LLVMContext Ctx;
-  Module *M = new Module("calc.expr", Ctx);
+  Module *M = new Module("simple-compiler", Ctx);
 
   // Create an instance of the ToIRVisitor and run it on the AST to generate LLVM IR.
   ToIRVisitor ToIR(M);

@@ -6,7 +6,7 @@
 class CodeGen
 {
 public:
- void compile(AST *Tree);
+ void compile(Program *Tree);
 
 };
 #endif
