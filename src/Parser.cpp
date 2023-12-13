@@ -480,7 +480,6 @@ IfStmt *Parser::parseIf()
         advance();
     }
 
-    advance();
 
     while (Tok.is(Token::KW_elif)) {
 
@@ -565,11 +564,10 @@ IfStmt *Parser::parseIf()
             advance();
         }
 
-        advance();
+        
 
     }
-    // else 
-    //     elseAssignments = nullptr;
+
 
     return new IfStmt(Cond, ifAssignments, elseAssignments, elifStmts);
 
@@ -626,7 +624,7 @@ IterStmt *Parser::parseIter()
         advance();
     }
 
-    advance();
+    
 
     return new IterStmt(Cond, assignments);
 
