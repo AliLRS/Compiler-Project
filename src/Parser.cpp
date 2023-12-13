@@ -58,6 +58,7 @@ Program *Parser::parseProgram()
             }
             break;
         default:
+            error();
             goto _error;
             break;
         }
