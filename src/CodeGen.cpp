@@ -284,7 +284,6 @@ ns{
       default:
         break;
       }
-      return;
     };
 
     virtual void visit(IterStmt &Node) override
@@ -347,7 +346,7 @@ ns{
         Value* ElifCondVal = V;
 
         Builder.SetInsertPoint(ElifBodyBB);
-        ElifCondVal->accept(*this);
+        (*I)->accept(*this);
         Builder.CreateBr(AfterIfBB);
 
         PreviousCondBB = ElifCondBB;
@@ -372,28 +371,14 @@ ns{
       }
 
       Builder.SetInsertPoint(AfterIfBB);
-
     };
 
     virtual void visit(elifStmt &Node) override{
-      llvm::BasicBlock* ElifCondBB = llvm::BasicBlock::Create(M->getContext(), "elif.cond", Builder.GetInsertBlock()->getParent());
-      llvm::BasicBlock* ElifBodyBB = llvm::BasicBlock::Create(M->getContext(), "elif.body", Builder.GetInsertBlock()->getParent());
-
-      Builder.SetInsertPoint(ElifCondBB);
-      Node.getCond()->accept(*this);
-      Value* ElifCondVal = V;
-
-      Builder.SetInsertPoint(ElifBodyBB);
-
       for (llvm::SmallVector<Assignment* >::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
         {
             (*I)->accept(*this);
         }
-
-      Builder.CreateBr(ElifBodyBB);
     };
-    
-    
   };
 }; // namespace
 
