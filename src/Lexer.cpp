@@ -121,6 +121,10 @@ void Lexer::next(Token &token)
             kind = Token::star;
         else if (Sign == "/")
             kind = Token::slash;
+        else if (Sign == "%")
+            kind = Token::mod;
+        else if (Sign == "^")
+            kind = Token::exp;
         else
             kind = Token::unknown;
         // generate the token
