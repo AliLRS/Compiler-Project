@@ -25,6 +25,9 @@ ns{
     Value *V;
     StringMap<AllocaInst *> nameMap;
 
+    FunctionType *CalcWriteFnTy;
+    Function *CalcWriteFn;
+
   public:
     // Constructor for the visitor class.
     ToIRVisitor(Module *M) : M(M), Builder(M->getContext())
@@ -107,10 +110,10 @@ ns{
       Builder.CreateStore(val, nameMap[varName]);
 
       // Create a function type for the "gsm_write" function.
-      FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
+      CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
 
       // Create a function declaration for the "gsm_write" function.
-      Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
+      CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
 
       // Create a call instruction to invoke the "gsm_write" function with the value.
       CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
