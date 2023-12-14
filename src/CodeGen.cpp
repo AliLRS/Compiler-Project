@@ -271,7 +271,26 @@ ns{
     };
 
     virtual void visit(IterStmt &Node) override{
-      return;
+      virtual void visit(LoopStatement& Node) override
+        {
+          llvm::BasicBlock* WhileCondBB = llvm::BasicBlock::Create(M->getContext(), "loopc.cond", MainFn);
+          llvm::BasicBlock* WhileBodyBB = llvm::BasicBlock::Create(M->getContext(), "loopc.body", MainFn);
+          llvm::BasicBlock* AfterWhileBB = llvm::BasicBlock::Create(M->getContext(), "after.loopc", MainFn);
+
+          Builder.CreateBr(WhileCondBB);
+          Builder.SetInsertPoint(WhileCondBB);
+          Node.getCond()->accept(*this);
+          Value* val=V;
+          Builder.CreateCondBr(val, WhileBodyBB, AfterWhileBB);
+          Builder.SetInsertPoint(WhileBodyBB);
+          for (llvm::SmallVector<AssignStatement* >::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
+            {
+                (*I)->accept(*this);
+            }
+          Builder.CreateBr(WhileCondBB);
+
+          Builder.SetInsertPoint(AfterWhileBB);
+        }
     };
 
     virtual void visit(IfStmt &Node) override{
