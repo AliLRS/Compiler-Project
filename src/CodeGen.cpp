@@ -4,6 +4,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/IR/Constants.h"
 
 using namespace llvm;
 
@@ -19,6 +20,7 @@ ns{
     Type *Int8PtrTy;
     Type *Int8PtrPtrTy;
     Constant *Int32Zero;
+    Constant *Int32One;
 
     Value *V;
     StringMap<AllocaInst *> nameMap;
@@ -33,6 +35,7 @@ ns{
       Int8PtrTy = Type::getInt8PtrTy(M->getContext());
       Int8PtrPtrTy = Int8PtrTy->getPointerTo();
       Int32Zero = ConstantInt::get(Int32Ty, 0, true);
+      Int32One = ConstantInt::get(Int32Ty, 1, true);
     }
 
     // Entry point for generating LLVM IR from the AST.
@@ -157,21 +160,35 @@ ns{
       case BinaryOp::Mod:
         V = Builder.CreateSRem(Left, Right);
         break;
-      // case BinaryOp::Exp:
-      //   V = CreateExp(Left, Right);
-      //   break;
+      case BinaryOp::Exp:
+        V = CreateExp(Left, Right);
+        break;
+      default:
+        break;
       }
     };
 
-    // Value CreateExp(Value *Left, Value *Right)
-    // {
-    //   Value res = Int32Zero;
-    //   for (int i = 0; i < Right; i++)
-    //   {
-    //     res += Builder.CreateNSWMul(res, Left);
-    //   }
-    //   return res;
-    // }
+    Value* CreateExp(Value *Left, Value *Right)
+    { 
+      Value* res = Int32One;
+
+      int intValue;
+      
+      if (ConstantInt* intConstant = dyn_cast<ConstantInt>(Right)) {
+        // Get the integer value
+        intValue = intConstant->getSExtValue(); // or getZExtValue() for unsigned values
+        // Now, 'intValue' contains the actual integer value.
+      } else {
+        // Handle the case where the Value is not an integer constant
+        llvm::errs() << "Error: Value is not an integer constant.\n";
+      }
+
+      for (int i = 0; i < intValue; ++i)
+      {
+        res = Builder.CreateNSWMul(res, Left);
+      }
+      return res;
+    }
 
     virtual void visit(Declaration &Node) override
     {
@@ -270,27 +287,26 @@ ns{
       return;
     };
 
-    virtual void visit(IterStmt &Node) override{
-      virtual void visit(LoopStatement& Node) override
+    virtual void visit(IterStmt &Node) override
+    {
+      llvm::BasicBlock* WhileCondBB = llvm::BasicBlock::Create(M->getContext(), "loopc.cond", Builder.GetInsertBlock()->getParent());
+      llvm::BasicBlock* WhileBodyBB = llvm::BasicBlock::Create(M->getContext(), "loopc.body", Builder.GetInsertBlock()->getParent());
+      llvm::BasicBlock* AfterWhileBB = llvm::BasicBlock::Create(M->getContext(), "after.loopc", Builder.GetInsertBlock()->getParent());
+
+      Builder.CreateBr(WhileCondBB);
+      Builder.SetInsertPoint(WhileCondBB);
+      Node.getCond()->accept(*this);
+      Value* val=V;
+      Builder.CreateCondBr(val, WhileBodyBB, AfterWhileBB);
+      Builder.SetInsertPoint(WhileBodyBB);
+      for (llvm::SmallVector<Assignment* >::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
         {
-          llvm::BasicBlock* WhileCondBB = llvm::BasicBlock::Create(M->getContext(), "loopc.cond", MainFn);
-          llvm::BasicBlock* WhileBodyBB = llvm::BasicBlock::Create(M->getContext(), "loopc.body", MainFn);
-          llvm::BasicBlock* AfterWhileBB = llvm::BasicBlock::Create(M->getContext(), "after.loopc", MainFn);
-
-          Builder.CreateBr(WhileCondBB);
-          Builder.SetInsertPoint(WhileCondBB);
-          Node.getCond()->accept(*this);
-          Value* val=V;
-          Builder.CreateCondBr(val, WhileBodyBB, AfterWhileBB);
-          Builder.SetInsertPoint(WhileBodyBB);
-          for (llvm::SmallVector<AssignStatement* >::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
-            {
-                (*I)->accept(*this);
-            }
-          Builder.CreateBr(WhileCondBB);
-
-          Builder.SetInsertPoint(AfterWhileBB);
+            (*I)->accept(*this);
         }
+      Builder.CreateBr(WhileCondBB);
+
+      Builder.SetInsertPoint(AfterWhileBB);
+        
     };
 
     virtual void visit(IfStmt &Node) override{
