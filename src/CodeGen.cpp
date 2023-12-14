@@ -236,6 +236,37 @@ ns{
     };
 
     virtual void visit(Comparison &Node) override{
+      // Visit the left-hand side of the Comparison operation and get its value.
+      Node.getLeft()->accept(*this);
+      Value *Left = V;
+
+      // Visit the right-hand side of the Comparison operation and get its value.
+      Node.getRight()->accept(*this);
+      Value *Right = V;
+
+      switch (Node.getOperator())
+      {
+      case Comparison::Equal:
+        V = Builder.CreateICmpEQ(Left, Right);
+        break;
+      case Comparison::Not_equal:
+        V = Builder.CreateICmpNE(Left, Right);
+        break;
+      case Comparison::Less:
+        V = Builder.CreateICmpSLT(Left, Right);
+        break;
+      case Comparison::Greater:
+        V = Builder.CreateICmpSGT(Left, Right);
+        break;
+      case Comparison::Less_equal:
+        V = Builder.CreateICmpSLE(Left, Right);
+        break;
+      case Comparison::Greater_equal:
+        V = Builder.CreateICmpSGE(Left, Right);
+        break;
+      default:
+        break;
+      }
       return;
     };
 
