@@ -71,6 +71,34 @@ ns{
 
       // Get the name of the variable being assigned.
       llvm::StringRef varName = Node.getLeft()->getVal();
+      
+      // Get the value of the variable being assigned.
+      Node.getLeft()->accept(*this);
+      Value *varVal = V;
+
+      switch (Node.getAssignKind())
+      {
+      case Assignment::Plus_assign:
+        val = Builder.CreateNSWAdd(varVal, val);
+        break;
+      case Assignment::Minus_assign:
+        val = Builder.CreateNSWSub(varVal, val);
+        break;
+      case Assignment::Star_assign:
+        val = Builder.CreateNSWMul(varVal, val);
+        break;
+      case Assignment::Slash_assign:
+        val = Builder.CreateSDiv(varVal, val);
+        break;
+      case Assignment::Mod_assign:
+        val = Builder.CreateSRem(varVal, val);
+        break;
+      case Assignment::Exp_assign:
+        /*TODO*/
+        break;
+      default:
+        break;
+      }
 
       // Create a store instruction to assign the value to the variable.
       Builder.CreateStore(val, nameMap[varName]);
