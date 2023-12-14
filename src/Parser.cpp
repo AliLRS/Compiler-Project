@@ -1,5 +1,7 @@
 #include "Parser.h"
 
+bool haveElse;
+
 // main point is that the whole input has been consumed
 Program *Parser::parse()
 {
@@ -10,8 +12,10 @@ Program *Parser::parse()
 Program *Parser::parseProgram()
 {
     llvm::SmallVector<AST *> data;
+    
     while (!Tok.is(Token::eoi))
     {
+        haveElse = true;
         switch (Tok.getKind())
         {
         case Token::KW_int:
@@ -61,7 +65,9 @@ Program *Parser::parseProgram()
             goto _error;
             break;
         }
-        advance();
+        if(haveElse){
+            advance();
+        }
     }
     return new Program(data);
 _error:
@@ -438,6 +444,8 @@ IfStmt *Parser::parseIf()
     Assignment *ifAsgnmnt;
     Assignment *elseAssignment;
 
+    haveElse = false;
+
     if (expect(Token::KW_if)){
         goto _error;
     }
@@ -454,7 +462,6 @@ IfStmt *Parser::parseIf()
         goto _error;
     }
         
-
     advance();
 
     if (expect(Token::KW_begin)){
@@ -480,7 +487,6 @@ IfStmt *Parser::parseIf()
     }
 
     advance();
-
 
     while (Tok.is(Token::KW_elif)) {
 
@@ -535,6 +541,8 @@ IfStmt *Parser::parseIf()
 
     if (Tok.is(Token::KW_else))
     {
+        haveElse = true;
+
         advance();
 
         if (expect(Token::colon)){
@@ -565,8 +573,6 @@ IfStmt *Parser::parseIf()
             advance();
         }
 
-        
-
     }
 
 
@@ -587,7 +593,6 @@ IterStmt *Parser::parseIter()
         goto _error;
     }
         
-
     advance();
 
     Cond = parseLogic();
@@ -624,8 +629,6 @@ IterStmt *Parser::parseIter()
 
         advance();
     }
-
-    
 
     return new IterStmt(Cond, assignments);
 
