@@ -97,7 +97,7 @@ ns{
         val = Builder.CreateSRem(varVal, val);
         break;
       case Assignment::Exp_assign:
-        /*TODO*/
+        val = CreateExp(varVal, val);
         break;
       default:
         break;
