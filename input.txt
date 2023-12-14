@@ -1,0 +1,8 @@
+int a;
+a = 2^4+3*3+1;
+int i = 0;
+loopc i < 5: begin
+i += 1;
+end
+i += 0;
+

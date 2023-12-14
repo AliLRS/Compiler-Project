@@ -39,6 +39,10 @@ ns{
       Int8PtrPtrTy = Int8PtrTy->getPointerTo();
       Int32Zero = ConstantInt::get(Int32Ty, 0, true);
       Int32One = ConstantInt::get(Int32Ty, 1, true);
+      // Create a function type for the "gsm_write" function.
+      CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
+      // Create a function declaration for the "gsm_write" function.
+      CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
     }
 
     // Entry point for generating LLVM IR from the AST.
@@ -108,12 +112,6 @@ ns{
 
       // Create a store instruction to assign the value to the variable.
       Builder.CreateStore(val, nameMap[varName]);
-
-      // Create a function type for the "gsm_write" function.
-      CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
-
-      // Create a function declaration for the "gsm_write" function.
-      CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
 
       // Create a call instruction to invoke the "gsm_write" function with the value.
       CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
