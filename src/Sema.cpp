@@ -58,7 +58,7 @@ public:
     else
       HasError = true;
 
-    if (Node.getOperator() == BinaryOp::Operator::Div) {
+    if (Node.getOperator() == BinaryOp::Operator::Div || Node.getOperator() == BinaryOp::Operator::Mod ) {
       Final* f = (Final*)right;
 
       if (f->getKind() == Final::ValueKind::Number) {
@@ -90,7 +90,7 @@ public:
       HasError=true;
     }
 
-    if (Node.getAssignKind() == Assignment::AssignKind::Slash_assign) {
+    if (Node.getAssignKind() == Assignment::AssignKind::Slash_assign || Node.getAssignKind() == Assignment::AssignKind::Mod_assign) {
 
       Final* f = (Final*)(Right);
       if (f)
