@@ -185,6 +185,28 @@ ns{
       }
     };
 
+    virtual void visit(LogicalExpr &Node) override{
+      // Visit the left-hand side of the Logical operation and get its value.
+      Node.getLeft()->accept(*this);
+      Value *Left = V;
+
+      // Visit the right-hand side of the Logical operation and get its value.
+      Node.getRight()->accept(*this);
+      Value *Right = V;
+
+      switch (Node.getOperator())
+      {
+      case LogicalExpr::And:
+        Builder.CreateAnd(Left, Right);
+        break;
+      case LogicalExpr::Or:
+        Builder.CreateOr(Left, Right);
+        break;
+      default:
+        break;
+      }
+    };
+
     virtual void visit(Comparison &Node) override{
       return;
     };
@@ -201,9 +223,7 @@ ns{
       return;
     };
     
-    virtual void visit(LogicalExpr &Node) override{
-      return;
-    };
+    
   };
 }; // namespace
 
