@@ -479,6 +479,8 @@ IfStmt *Parser::parseIf()
         advance();
     }
 
+    advance();
+
 
     while (Tok.is(Token::KW_elif)) {
 
