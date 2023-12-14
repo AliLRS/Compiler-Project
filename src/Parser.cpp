@@ -26,7 +26,6 @@ Program *Parser::parseProgram()
         case Token::ident:
             Assignment *a;
             a = parseAssign();
-
             if (!Tok.is(Token::semicolon))
             {
                 error();
@@ -192,7 +191,6 @@ Assignment *Parser::parseAssign()
         error();
         goto _error;
     }
-
     advance();
     E = parseExpr();
     if(E){
@@ -250,7 +248,7 @@ Expr *Parser::parseTerm()
     {
         goto _error;
     }
-    while (Tok.isOneOf(Token::star, Token::slash))
+    while (Tok.isOneOf(Token::star, Token::mod, Token::slash))
     {
         BinaryOp::Operator Op;
         if (Tok.is(Token::star))
@@ -286,7 +284,7 @@ Expr *Parser::parseFactor()
     {
         goto _error;
     }
-    while (Tok.is(Token::mod))
+    while (Tok.is(Token::exp))
     {
         BinaryOp::Operator Op;
         if (Tok.is(Token::exp))
