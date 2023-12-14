@@ -299,10 +299,12 @@ ns{
       Value* val=V;
       Builder.CreateCondBr(val, WhileBodyBB, AfterWhileBB);
       Builder.SetInsertPoint(WhileBodyBB);
+
       for (llvm::SmallVector<Assignment* >::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
         {
             (*I)->accept(*this);
         }
+
       Builder.CreateBr(WhileCondBB);
 
       Builder.SetInsertPoint(AfterWhileBB);
@@ -310,11 +312,85 @@ ns{
     };
 
     virtual void visit(IfStmt &Node) override{
-      return;
+      llvm::BasicBlock* IfCondBB = llvm::BasicBlock::Create(M->getContext(), "if.cond", Builder.GetInsertBlock()->getParent());
+      llvm::BasicBlock* IfBodyBB = llvm::BasicBlock::Create(M->getContext(), "if.body", Builder.GetInsertBlock()->getParent());
+      llvm::BasicBlock* AfterIfBB = llvm::BasicBlock::Create(M->getContext(), "after.if", Builder.GetInsertBlock()->getParent());
+
+      Builder.CreateBr(IfCondBB);
+      Builder.SetInsertPoint(IfCondBB);
+      Node.getCond()->accept(*this);
+      Value* IfCondVal=V;
+
+      Builder.SetInsertPoint(IfBodyBB);
+
+      for (llvm::SmallVector<Assignment* >::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
+        {
+            (*I)->accept(*this);
+        }
+
+      Builder.CreateBr(AfterIfBB);
+
+      llvm::BasicBlock* PreviousCondBB = IfCondBB;
+      llvm::BasicBlock* PreviousBodyBB = IfBodyBB;
+      Value* PreviousCondVal = IfCondVal;
+
+      for (llvm::SmallVector<elifStmt *, 8>::const_iterator I = Node.beginElif(), E = Node.endElif(); I != E; ++I)
+      {
+        llvm::BasicBlock* ElifCondBB = llvm::BasicBlock::Create(M->getContext(), "elif.cond", Builder.GetInsertBlock()->getParent());
+        llvm::BasicBlock* ElifBodyBB = llvm::BasicBlock::Create(M->getContext(), "elif.body", Builder.GetInsertBlock()->getParent());
+
+        Builder.SetInsertPoint(PreviousCondBB);
+        Builder.CreateCondBr(PreviousCondVal, PreviousBodyBB, ElifCondBB);
+
+        Builder.SetInsertPoint(ElifCondBB);
+        (*I)->getCond()->accept(*this);
+        Value* ElifCondVal = V;
+
+        Builder.SetInsertPoint(ElifBodyBB);
+        ElifCondVal->accept(*this);
+        Builder.CreateBr(AfterIfBB);
+
+        PreviousCondBB = ElifCondBB;
+        PreviousCondVal = ElifCondVal;
+        PreviousBodyBB = ElifBodyBB;
+      }
+      if (Node.beginElse() != Node.endElse()) {
+        llvm::BasicBlock* ElseBB = llvm::BasicBlock::Create(M->getContext(), "else.body", Builder.GetInsertBlock()->getParent());
+        Builder.SetInsertPoint(ElseBB);
+        for (llvm::SmallVector<Assignment* >::const_iterator I = Node.beginElse(), E = Node.endElse(); I != E; ++I)
+        {
+            (*I)->accept(*this);
+        }
+        Builder.CreateBr(AfterIfBB);
+
+        Builder.SetInsertPoint(PreviousCondBB);
+        Builder.CreateCondBr(PreviousCondVal, PreviousBodyBB, ElseBB);
+      }
+      else {
+        Builder.SetInsertPoint(PreviousCondBB);
+        Builder.CreateCondBr(IfCondVal, PreviousBodyBB, AfterIfBB);
+      }
+
+      Builder.SetInsertPoint(AfterIfBB);
+
     };
 
     virtual void visit(elifStmt &Node) override{
-      return;
+      llvm::BasicBlock* ElifCondBB = llvm::BasicBlock::Create(M->getContext(), "elif.cond", Builder.GetInsertBlock()->getParent());
+      llvm::BasicBlock* ElifBodyBB = llvm::BasicBlock::Create(M->getContext(), "elif.body", Builder.GetInsertBlock()->getParent());
+
+      Builder.SetInsertPoint(ElifCondBB);
+      Node.getCond()->accept(*this);
+      Value* ElifCondVal = V;
+
+      Builder.SetInsertPoint(ElifBodyBB);
+
+      for (llvm::SmallVector<Assignment* >::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
+        {
+            (*I)->accept(*this);
+        }
+
+      Builder.CreateBr(ElifBodyBB);
     };
     
     
