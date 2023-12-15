@@ -334,7 +334,7 @@ Expr *Parser::parseFinal()
         if(Res == nullptr){
             goto _error;
         }
-        if (consume(Token::r_paren))
+        if (!consume(Token::r_paren))
             break;
     default:
         error();
