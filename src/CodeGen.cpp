@@ -181,7 +181,8 @@ ns{
         // Now, 'intValue' contains the actual integer value.
       } else {
         // Handle the case where the Value is not an integer constant
-        llvm::errs() << "Error: Value is not an integer constant.\n";
+        llvm::errs() << "Error: The exponent only allowed to be a constant.\n";
+        exit(3);
       }
 
       for (int i = 0; i < intValue; ++i)
@@ -243,10 +244,10 @@ ns{
       switch (Node.getOperator())
       {
       case LogicalExpr::And:
-        Builder.CreateAnd(Left, Right);
+        V = Builder.CreateAnd(Left, Right);
         break;
       case LogicalExpr::Or:
-        Builder.CreateOr(Left, Right);
+        V = Builder.CreateOr(Left, Right);
         break;
       default:
         break;
