@@ -18,7 +18,7 @@ int main(int argc, const char **argv)
     llvm::InitLLVM X(argc, argv);
 
     // Parse command-line options.
-    llvm::cl::ParseCommandLineOptions(argc, argv, "GSM - the expression compiler\n");
+    llvm::cl::ParseCommandLineOptions(argc, argv, "Simple Compiler\n");
 
     // Create a lexer object and initialize it with the input expression.
     Lexer Lex(Input);

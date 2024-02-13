@@ -1,6 +1,6 @@
 cd build
 cd src
-./gsm "$(cat ../../input.txt)" > gsm.ll
-llc --filetype=obj -o=gsm.o gsm.ll
-clang -o gsmbin gsm.o ../../rtGSM.c
-./gsmbin
+./compiler "$(cat ../../input.txt)" > compiler.ll
+llc --filetype=obj -o=compiler.o compiler.ll
+clang -o compilerbin compiler.o ../../rtCompiler.c
+./compilerbin
